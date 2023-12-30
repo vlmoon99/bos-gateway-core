@@ -11,29 +11,9 @@ const Text = ({ children }) => {
   return <span style={{ fontSize: "16px", color: "#333" }}>{children}</span>;
 };
 
-// class App extends Component {
-//   componentDidMount() {}
-//   // const near = useNear("mainnet");
-
-//   render() {
-//     const { name } = this.props;
-//     return (
-//       <>
-//         <h1>Hello {name}</h1>
-//         <div style={containerStyle}>
-//           <Widget
-//             key={"https://near.social/vlmoon.near/widget/BOSModular"}
-//             src={"https://near.social/vlmoon.near/widget/BOSModular"}
-//             loading={<Text>isLoading</Text>}
-//           />
-//         </div>
-//       </>
-//     );
-//   }
-// }
-
 function App(props) {
   console.log("NEAR objects will be initialized");
+
   const init = async () => {
     const { keyStores, KeyPair, connect } = nearAPI;
     const myKeyStore = new keyStores.InMemoryKeyStore();
@@ -80,6 +60,7 @@ function App(props) {
       JSON.stringify(["my-near-wallet"])
     );
   };
+
   const { keyStores } = nearAPI;
   const myKeyStore = new keyStores.InMemoryKeyStore();
 
@@ -93,25 +74,25 @@ function App(props) {
       initNear({
         networkId: "mainnet",
         keyStore: myKeyStore,
+        selector: undefined,
         config: {
           defaultFinality: undefined,
         },
       });
   }, [initNear]);
 
-  init().then((res) => {
-    console.log("NEAR Initialized");
-    console.log("Current Account");
-    this.forceUpdate();
-  });
+  init();
+
+  //TODO
+  //We need to inject somehow Near Account without wallet selector
 
   return (
     <>
       <h1>Hello BOS VM</h1>
       <div style={containerStyle}>
         <Widget
-          key={"vlmoon.near/widget/BOSModular"}
-          src={"vlmoon.near/widget/BOSModular"}
+          key={"mob.near/widget/ProfilePage"}
+          src={"mob.near/widget/ProfilePage"}
           loading={<Text>isLoading</Text>}
         />
       </div>
