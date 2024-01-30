@@ -10,9 +10,53 @@ const config = {
   module: {
     rules: [
       {
+        test: /\.m?js/,
+        resolve: {
+          fullySpecified: false,
+        },
+      },
+      {
         test: /\.(js|jsx)$/,
         use: "babel-loader",
         exclude: /node_modules/,
+      },
+      {
+        test: /\.(scss|css)$/,
+        use: [
+          {
+            // inject CSS to page
+            loader: "style-loader",
+          },
+          {
+            // translates CSS into CommonJS modules
+            loader: "css-loader",
+          },
+          {
+            // Run postcss actions
+            loader: "postcss-loader",
+            options: {
+              // `postcssOptions` is needed for postcss 8.x;
+              // if you use postcss 7.x skip the key
+              postcssOptions: {
+                // postcss plugins, can be exported to postcss.config.js
+                plugins: function () {
+                  return [require("autoprefixer")];
+                },
+              },
+            },
+          },
+          {
+            // compiles Sass to CSS
+            loader: "sass-loader",
+            options: {
+              // Prefer `dart-sass`
+              implementation: require("sass"),
+              sassOptions: {
+                quietDeps: true,
+              },
+            },
+          },
+        ],
       },
     ],
   },
@@ -27,6 +71,11 @@ const config = {
       path: require.resolve("path-browserify"),
       zlib: require.resolve("browserify-zlib"),
       url: require.resolve("url/"),
+    },
+    alias: {
+      react: path.resolve(__dirname, "./node_modules/react"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
+      "near-api-js": path.resolve(__dirname, "./node_modules/near-api-js"),
     },
   },
   plugins: [

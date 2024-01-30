@@ -1,6 +1,7 @@
 import { Widget, useNear, useInitNear, useAccount } from "near-social-vm";
 import * as nearAPI from "near-api-js";
 import React, { useCallback, useEffect, useState } from "react";
+import "./App.scss";
 
 const containerStyle = {
   height: "100vh",
@@ -86,17 +87,14 @@ function App(props) {
   //TODO
   //We need to inject somehow Near Account without wallet selector
 
+  const src = "vlmoon.near/widget/BOSModular"
+  const widgetProps = {}
+
   return (
-    <>
-      <h1>Hello BOS VM</h1>
-      <div style={containerStyle}>
-        <Widget
-          key={"mob.near/widget/ProfilePage"}
-          src={"mob.near/widget/ProfilePage"}
-          loading={<Text>isLoading</Text>}
-        />
-      </div>
-    </>
+    <div>
+      <h1 className="text-center">Hello BOS VM</h1>
+        <Widget key={src} src={src} props={widgetProps} />
+    </div>
   );
 }
 
