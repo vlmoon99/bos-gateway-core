@@ -1,101 +1,97 @@
-import { Widget, useNear, useInitNear, useAccount } from "near-social-vm";
 import * as nearAPI from "near-api-js";
+import { Widget, useNear, useInitNear, useAccount } from "near-social-vm";
+import { setupWalletSelector } from "@near-wallet-selector/core";
+import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 import React, { useCallback, useEffect, useState } from "react";
+import ls from "local-storage";
 import "./App.scss";
 
-const containerStyle = {
-  height: "100vh",
-  width: "100vh",
+const WalletSelectorDefaultValues = {
+  "near-wallet-selector:selectedWalletId": "near-wallet",
+  "near-wallet-selector:recentlySignedInWallets": ["near-wallet"],
+  "near-wallet-selector:contract": {
+    contractId: "social.near",
+    methodNames: [],
+  },
 };
 
-const Text = ({ children }) => {
-  return <span style={{ fontSize: "16px", color: "#333" }}>{children}</span>;
-};
+const WalletSelectorAuthKey = "near_app_wallet_auth_key";
 
 function App(props) {
+  const src = "vlmoon.near/widget/ProfileEditor";
+  const widgetProps = {};
+  const PRIVATE_KEY =
+  "ed25519:5tbP6myFeFztTaCk25E8XkXeMvmxeUL9T4cJppKhSnFJsPA9NYBzPhu9eNMCVC9KBhTkKk6s8bGyGG28dUczSJ7v";
+  const accountId =
+  "bosmobile.near";
+
   console.log("NEAR objects will be initialized");
 
-  const init = async () => {
-    const { keyStores, KeyPair, connect } = nearAPI;
-    const myKeyStore = new keyStores.InMemoryKeyStore();
-    const PRIVATE_KEY =
-      "5tbP6myFeFztTaCk25E8XkXeMvmxeUL9T4cJppKhSnFJsPA9NYBzPhu9eNMCVC9KBhTkKk6s8bGyGG28dUczSJ7v";
-    const keyPair = KeyPair.fromString(PRIVATE_KEY);
-    await myKeyStore.setKey("mainnet", "bosmobile.near", keyPair);
 
-    const connectionConfig = {
-      networkId: "mainnet",
-      keyStore: myKeyStore,
-      nodeUrl: "https://rpc.mainnet.near.org",
-      walletUrl: "https://app.mynearwallet.com/",
-      helperUrl: "https://helper.mainnet.near.org",
-      explorerUrl: "https://explorer.mainnet.near.org",
-    };
-    const nearConnection = await connect(connectionConfig);
-
-    localStorage.setItem("near-social-vm:v01::accountId", "bosmobile.near");
-
-    localStorage.setItem("social.near:v01:widgetProps", "{}");
-
-    localStorage.setItem("social.near:v01:editorUncommittedPreviews", true);
-
-    localStorage.setItem("social.near:v01:editorLayout", "Split");
-
-    localStorage.setItem(
-      "near-wallet-selector:selectedWalletId",
-      "my-near-wallet"
-    );
-
-    localStorage.setItem(
-      "near-api-js:keystore:bosmobile.near:mainnet",
-      "ed25519:5tbP6myFeFztTaCk25E8XkXeMvmxeUL9T4cJppKhSnFJsPA9NYBzPhu9eNMCVC9KBhTkKk6s8bGyGG28dUczSJ7v"
-    );
-
-    localStorage.setItem(
-      "near-wallet-selector:contract",
-      JSON.stringify({ contractId: "social.near", methodNames: [] })
-    );
-
-    localStorage.setItem(
-      "near-wallet-selector:recentlySignedInWallets",
-      JSON.stringify(["my-near-wallet"])
-    );
-  };
-
-  const { keyStores } = nearAPI;
-  const myKeyStore = new keyStores.InMemoryKeyStore();
-
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [nearInitialized, setNearInitialized] = useState(false);
   const { initNear } = useInitNear();
-  const near = useNear("mainnet");
-  const account = useAccount();
-  const accountId = account.accountId;
+  const near = useNear();
+  // const account = useAccount();
 
   useEffect(() => {
+    const myKeyStore = new nearAPI.keyStores.BrowserLocalStorageKeyStore();
+    async function setData() {
+      ls.clear();
+      const keyPair = nearAPI.KeyPair.fromString(PRIVATE_KEY);
+      await myKeyStore.setKey("mainnet", accountId, keyPair);
+      Object.entries(WalletSelectorDefaultValues).forEach(([key, value]) => {
+        ls.set(key, value);
+      });
+      ls.set(WalletSelectorAuthKey, {
+        accountId: accountId,
+        allKeys: [keyPair.publicKey.toString()],
+      });
+    }
+
+    setData();
+
     initNear &&
       initNear({
         networkId: "mainnet",
-        keyStore: myKeyStore,
-        selector: undefined,
+        selector: setupWalletSelector({
+          network: "mainnet",
+          modules: [setupMyNearWallet()],
+        }),
         config: {
           defaultFinality: undefined,
         },
       });
+
+    setNearInitialized(true);
   }, [initNear]);
 
-  init();
+  useEffect(() => {
+    async function loginInAccount() {
+      const wallet = await (await near.selector).wallet("my-near-wallet");
+      wallet.signIn({ contractId: near.config.contractName });
+      setIsInitialized(true);
+    }
+    if (nearInitialized) {
+      loginInAccount();
+    }
+  }, [nearInitialized, near]);
 
-  //TODO
-  //We need to inject somehow Near Account without wallet selector
-
-  const src = "vlmoon.near/widget/BOSModular"
-  const widgetProps = {}
-
-  return (
-    <div>
-      <h1 className="text-center">Hello BOS VM</h1>
+  if (!isInitialized) {
+    return (
+      <div class="centered-spinner">
+        <div class="spinner-grow" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  } else {
+    return (
+      <div>
         <Widget key={src} src={src} props={widgetProps} />
-    </div>
-  );
+      </div>
+    );
+  }
 }
 
 export default App;

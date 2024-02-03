@@ -1,5 +1,13 @@
 @import "bootstrap";
 
+.centered-spinner {
+  position: fixed; /* Use fixed positioning */
+  top: 50%; /* Center vertically */
+  left: 50%; /* Center horizontally */
+  transform: translate(-50%, -50%); /* Adjust the position to truly center the spinner */
+  z-index: 1050; /* Ensure it's above other content */
+}
+
 body {
   overflow-y: scroll;
 }
@@ -49,3 +57,5 @@ a {
     justify-content: center !important;
   }
 }
+
+
