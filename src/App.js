@@ -6,40 +6,39 @@ import React, { useCallback, useEffect, useState } from "react";
 import ls from "local-storage";
 import "./App.scss";
 
-const WalletSelectorDefaultValues = {
-  "near-wallet-selector:selectedWalletId": "near-wallet",
-  "near-wallet-selector:recentlySignedInWallets": ["near-wallet"],
-  "near-wallet-selector:contract": {
-    contractId: "social.near",
-    methodNames: [],
-  },
-};
-
 const WalletSelectorAuthKey = "near_app_wallet_auth_key";
 
 function App(props) {
-  const src = "vlmoon.near/widget/ProfileEditor";
-  const widgetProps = {};
-  const PRIVATE_KEY =
-  "ed25519:5tbP6myFeFztTaCk25E8XkXeMvmxeUL9T4cJppKhSnFJsPA9NYBzPhu9eNMCVC9KBhTkKk6s8bGyGG28dUczSJ7v";
-  const accountId =
-  "bosmobile.near";
+  const network = props.network;
+  const widgetSrc = props.widgetSrc;
+  const widgetProps = props.widgetProps;
+  const PRIVATE_KEY = props.privateKey;
+  const accountId = props.accountId;
 
   console.log("NEAR objects will be initialized");
+  console.log(network, widgetSrc, JSON.stringify(widgetProps), accountId, PRIVATE_KEY);
 
+  const anonymousWidget = PRIVATE_KEY === "" || accountId === "";
 
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [nearInitialized, setNearInitialized] = useState(false);
   const { initNear } = useInitNear();
   const near = useNear();
-  // const account = useAccount();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [nearInitialized, setNearInitialized] = useState(false);
 
+  const WalletSelectorDefaultValues = {
+    "near-wallet-selector:selectedWalletId": "near-wallet",
+    "near-wallet-selector:recentlySignedInWallets": ["near-wallet"],
+    "near-wallet-selector:contract": {
+      contractId: network === "testnet" ? "v1.social08.testnet" : "social.near",
+      methodNames: [],
+    },
+  };
   useEffect(() => {
     const myKeyStore = new nearAPI.keyStores.BrowserLocalStorageKeyStore();
     async function setData() {
       ls.clear();
       const keyPair = nearAPI.KeyPair.fromString(PRIVATE_KEY);
-      await myKeyStore.setKey("mainnet", accountId, keyPair);
+      await myKeyStore.setKey(network, accountId, keyPair);
       Object.entries(WalletSelectorDefaultValues).forEach(([key, value]) => {
         ls.set(key, value);
       });
@@ -48,14 +47,16 @@ function App(props) {
         allKeys: [keyPair.publicKey.toString()],
       });
     }
-
-    setData();
+    if (!anonymousWidget) {
+      setData(); 
+    }
 
     initNear &&
       initNear({
-        networkId: "mainnet",
-        selector: setupWalletSelector({
-          network: "mainnet",
+        networkId: network,
+        selector:
+        anonymousWidget ? undefined : setupWalletSelector({
+          network: network,
           modules: [setupMyNearWallet()],
         }),
         config: {
@@ -72,8 +73,11 @@ function App(props) {
       wallet.signIn({ contractId: near.config.contractName });
       setIsInitialized(true);
     }
-    if (nearInitialized) {
+    if (nearInitialized && !anonymousWidget) {
       loginInAccount();
+    }
+    if (anonymousWidget) {
+      setIsInitialized(true);
     }
   }, [nearInitialized, near]);
 
@@ -88,7 +92,7 @@ function App(props) {
   } else {
     return (
       <div>
-        <Widget key={src} src={src} props={widgetProps} />
+        <Widget key={widgetSrc} src={widgetSrc} props={widgetProps} />
       </div>
     );
   }
