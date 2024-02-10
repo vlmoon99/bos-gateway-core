@@ -54,8 +54,7 @@ function App(props) {
     initNear &&
       initNear({
         networkId: network,
-        selector:
-        anonymousWidget ? undefined : setupWalletSelector({
+        selector: setupWalletSelector({
           network: network,
           modules: [setupMyNearWallet()],
         }),
